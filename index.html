@@ -15,7 +15,7 @@
       --label-width: 100mm;
       --label-height: 30mm;
       --matrix-size: 22mm;
-      --font-size: 18pt;
+      --font-size: 24pt;
       --gap: 0mm;
     }
 
@@ -179,7 +179,7 @@
     }
 
     .code-text {
-      margin-left: 15mm;
+      margin-left: 8mm;
       font-size: var(--font-size);
       font-weight: 700;
       line-height: 1.1;
@@ -246,7 +246,7 @@
         <strong>[DataMatrix] [Code]</strong>.
       </p>
 
-      <textarea id="codesInput" placeholder="ABC-001"></textarea>
+      <textarea id="codesInput" placeholder="ABC-001-002-003"></textarea>
 
       <div class="settings">
         <label>
@@ -398,7 +398,7 @@
 
     function loadExample() {
       document.getElementById("codesInput").value = [
-        "ABC-001"
+        "ABC-001-002-003"
       ].join("\n");
 
       generateLabels();
