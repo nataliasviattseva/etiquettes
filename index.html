@@ -1,21 +1,33 @@
-
 <!DOCTYPE html>
 <html lang="fr">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-  <title>Impression d'étiquettes DataMatrix</title>
+  <title>Impression d'étiquettes DataMatrix - Style ZPL</title>
 
-  <!-- Génération DataMatrix côté navigateur -->
   <script src="https://cdn.jsdelivr.net/npm/bwip-js@4.11.1/dist/bwip-js-min.js"></script>
 
   <style>
     :root {
       --label-width: 100mm;
       --label-height: 30mm;
-      --matrix-size: 22mm;
-      --font-size: 24pt;
+
+      /* Équivalent approximatif de votre ZPL 300 dpi :
+         ^PW1181 = 100 mm
+         ^LL354  = 30 mm
+         ^FO30,120  -> 2.5 mm, 10.2 mm
+         ^FO850,60  -> 72 mm, 5.1 mm
+      */
+      --text-left: 2.5mm;
+      --text-top: 10.2mm;
+      --text-size: 26pt;
+      --text-width: 70mm;
+
+      --matrix-left: 72mm;
+      --matrix-top: 5.1mm;
+      --matrix-size: 20mm;
+
       --gap: 0mm;
     }
 
@@ -31,7 +43,7 @@
     }
 
     .app {
-      max-width: 1100px;
+      max-width: 1150px;
       margin: 0 auto;
       padding: 24px;
     }
@@ -57,13 +69,13 @@
 
     textarea {
       width: 100%;
-      min-height: 170px;
+      min-height: 180px;
       padding: 12px;
       font-size: 15px;
       resize: vertical;
       border: 1px solid #ccc;
       border-radius: 8px;
-      font-family: Arial, Helvetica, sans-serif;
+      font-family: Consolas, monospace;
     }
 
     .settings {
@@ -146,27 +158,39 @@
     .label {
       width: var(--label-width);
       height: var(--label-height);
-      display: flex;
-      flex-direction: row;
-      align-items: center;
-      justify-content: flex-start;
+      position: relative;
       page-break-inside: avoid;
       break-inside: avoid;
       overflow: hidden;
       background: white;
       border: 1px dashed #999;
-      padding: 2mm 4mm;
+      flex: 0 0 auto;
     }
 
     .label.no-border {
       border: none;
     }
 
+    .code-text {
+      position: absolute;
+      left: var(--text-left);
+      top: var(--text-top);
+      width: var(--text-width);
+      font-family: Arial, Helvetica, sans-serif;
+      font-size: var(--text-size);
+      font-weight: 400;
+      line-height: 1;
+      color: #000;
+      white-space: nowrap;
+      overflow: hidden;
+    }
+
     .matrix {
+      position: absolute;
+      left: var(--matrix-left);
+      top: var(--matrix-top);
       width: var(--matrix-size);
       height: var(--matrix-size);
-      min-width: var(--matrix-size);
-      min-height: var(--matrix-size);
       display: flex;
       align-items: center;
       justify-content: center;
@@ -176,18 +200,6 @@
       width: var(--matrix-size);
       height: var(--matrix-size);
       display: block;
-    }
-
-    .code-text {
-      margin-left: 8mm;
-      font-family: Arial Black, Arial, Helvetica, sans-serif;
-      font-size: var(--font-size);
-      font-weight: 700;
-      line-height: 1.1;
-      text-align: left;
-      word-break: break-word;
-      color: #000;
-      flex: 1;
     }
 
     .empty-state {
@@ -242,9 +254,15 @@
   <main class="app">
     <section class="panel controls">
       <h1>Impression d'étiquettes DataMatrix</h1>
+
       <p class="hint">
-        Collez votre liste de codes. Un code par ligne. Le format de l'étiquette est :
-        <strong>[DataMatrix] [Code]</strong>.
+        Format style ZPL : <strong>[Code] [DataMatrix]</strong> ou <strong>[DataMatrix] [Code]</strong>, selon la position choisie.
+        <br>
+        Une ligne = une étiquette.
+        <br>
+        Si le texte et le DataMatrix sont identiques : écrivez seulement le code.
+        <br>
+        Si le texte et le DataMatrix sont différents : utilisez <strong>texte ; datamatrix</strong>.
       </p>
 
       <textarea id="codesInput" placeholder="ABC-001-002-003"></textarea>
@@ -261,26 +279,49 @@
         </label>
 
         <label>
+          Position texte X, mm
+          <input id="textLeft" type="number" min="0" max="200" step="0.1" value="4" />
+        </label>
+
+        <label>
+          Position texte Y, mm
+          <input id="textTop" type="number" min="0" max="100" step="0.1" value="12" />
+        </label>
+
+        <label>
+          Taille texte, pt
+          <input id="textSize" type="number" min="6" max="60" step="1" value="22" />
+        </label>
+
+        <label>
+          Position DataMatrix X, mm
+          <input id="matrixLeft" type="number" min="0" max="200" step="0.1" value="72" />
+        </label>
+
+        <label>
+          Position DataMatrix Y, mm
+          <input id="matrixTop" type="number" min="0" max="100" step="0.1" value="5" />
+        </label>
+
+        <label>
           Taille DataMatrix, mm
-          <input id="matrixSize" type="number" min="5" max="80" step="1" value="22" />
+          <input id="matrixSize" type="number" min="5" max="80" step="1" value="20" />
         </label>
 
         <label>
-          Taille du texte, pt
-          <input id="fontSize" type="number" min="6" max="40" step="1" value="18" />
-        </label>
-
-        <label>
-          Espace entre étiquettes, mm
-          <input id="gapSize" type="number" min="0" max="20" step="1" value="0" />
-        </label>
-
-        <label>
-          Qualité du DataMatrix
+          Qualité DataMatrix
           <select id="scaleValue">
             <option value="3">Normale</option>
             <option value="4" selected>Bonne</option>
             <option value="5">Haute</option>
+          </select>
+        </label>
+
+        <label>
+          Position DataMatrix
+          <select id="matrixPosition">
+            <option value="right" selected>À droite</option>
+            <option value="left">À gauche</option>
           </select>
         </label>
       </div>
@@ -298,7 +339,7 @@
       <div class="buttons">
         <button onclick="generateLabels()">Générer</button>
         <button onclick="window.print()">Imprimer</button>
-        <button class="secondary" onclick="loadExample()">Exemple</button>
+        <button class="secondary" onclick="loadExample()">Exemple ZPL</button>
         <button class="danger" onclick="clearAll()">Effacer</button>
       </div>
 
@@ -313,31 +354,79 @@
   </main>
 
   <script>
-    function parseCodes(rawText, removeDuplicates) {
-      let values = rawText
-        .split(/\r?\n|;|,/)
-        .map(value => value.trim())
-        .filter(value => value.length > 0);
+    function splitLine(line) {
+      const separators = [";", "\t", "|"];
 
-      if (removeDuplicates) {
-        values = [...new Set(values)];
+      for (const sep of separators) {
+        if (line.includes(sep)) {
+          const parts = line.split(sep).map(value => value.trim()).filter(Boolean);
+          return {
+            textValue: parts[0] || "",
+            matrixValue: parts[1] || parts[0] || ""
+          };
+        }
       }
 
-      return values;
+      return {
+        textValue: line.trim(),
+        matrixValue: line.trim()
+      };
+    }
+
+    function parseRows(rawText, removeDuplicates) {
+      let rows = rawText
+        .split(/\r?\n/)
+        .map(line => line.trim())
+        .filter(line => line.length > 0)
+        .map(splitLine);
+
+      if (removeDuplicates) {
+        const seen = new Set();
+        rows = rows.filter(row => {
+          const key = row.textValue + "||" + row.matrixValue;
+          if (seen.has(key)) return false;
+          seen.add(key);
+          return true;
+        });
+      }
+
+      return rows;
     }
 
     function applySettings() {
-      const width = document.getElementById("labelWidth").value || 100;
-      const height = document.getElementById("labelHeight").value || 30;
-      const matrix = document.getElementById("matrixSize").value || 22;
-      const font = document.getElementById("fontSize").value || 18;
-      const gap = document.getElementById("gapSize").value || 0;
+      const labelWidth = Number(document.getElementById("labelWidth").value || 100);
+      const labelHeight = Number(document.getElementById("labelHeight").value || 30);
+      const textLeftInput = Number(document.getElementById("textLeft").value || 2.5);
+      const textTop = Number(document.getElementById("textTop").value || 10.2);
+      const textSize = Number(document.getElementById("textSize").value || 26);
+      const matrixLeftInput = Number(document.getElementById("matrixLeft").value || 72);
+      const matrixTop = Number(document.getElementById("matrixTop").value || 5.1);
+      const matrixSize = Number(document.getElementById("matrixSize").value || 20);
+      const matrixPosition = document.getElementById("matrixPosition").value;
 
-      document.documentElement.style.setProperty("--label-width", width + "mm");
-      document.documentElement.style.setProperty("--label-height", height + "mm");
-      document.documentElement.style.setProperty("--matrix-size", matrix + "mm");
-      document.documentElement.style.setProperty("--font-size", font + "pt");
-      document.documentElement.style.setProperty("--gap", gap + "mm");
+      let textLeft = textLeftInput;
+      let matrixLeft = matrixLeftInput;
+      let textWidth = Math.max(10, matrixLeft - textLeft - 2);
+
+      if (matrixPosition === "left") {
+        matrixLeft = textLeftInput;
+        textLeft = matrixLeft + matrixSize + 5;
+        textWidth = Math.max(10, labelWidth - textLeft - 2);
+      } else {
+        matrixLeft = matrixLeftInput;
+        textLeft = textLeftInput;
+        textWidth = Math.max(10, matrixLeft - textLeft - 2);
+      }
+
+      document.documentElement.style.setProperty("--label-width", labelWidth + "mm");
+      document.documentElement.style.setProperty("--label-height", labelHeight + "mm");
+      document.documentElement.style.setProperty("--text-left", textLeft + "mm");
+      document.documentElement.style.setProperty("--text-top", textTop + "mm");
+      document.documentElement.style.setProperty("--text-size", textSize + "pt");
+      document.documentElement.style.setProperty("--text-width", textWidth + "mm");
+      document.documentElement.style.setProperty("--matrix-left", matrixLeft + "mm");
+      document.documentElement.style.setProperty("--matrix-top", matrixTop + "mm");
+      document.documentElement.style.setProperty("--matrix-size", matrixSize + "mm");
     }
 
     function generateLabels() {
@@ -347,41 +436,41 @@
       const removeDuplicates = document.getElementById("removeDuplicates").checked;
       const showBorders = document.getElementById("showBorders").checked;
       const scaleValue = Number(document.getElementById("scaleValue").value || 4);
-      const values = parseCodes(rawText, removeDuplicates);
+      const rows = parseRows(rawText, removeDuplicates);
 
       const container = document.getElementById("labels");
       const status = document.getElementById("status");
 
       container.innerHTML = "";
 
-      if (values.length === 0) {
+      if (rows.length === 0) {
         container.innerHTML = '<div class="empty-state">Veuillez saisir au moins un code.</div>';
         status.textContent = "Aucun code à générer.";
         return;
       }
 
-      values.forEach((value) => {
+      rows.forEach((row) => {
         const label = document.createElement("div");
         label.className = showBorders ? "label" : "label no-border";
+
+        const text = document.createElement("div");
+        text.className = "code-text";
+        text.textContent = row.textValue;
 
         const matrixBox = document.createElement("div");
         matrixBox.className = "matrix";
 
         const canvas = document.createElement("canvas");
 
-        const text = document.createElement("div");
-        text.className = "code-text";
-        text.textContent = value;
-
         matrixBox.appendChild(canvas);
-        label.appendChild(matrixBox);
         label.appendChild(text);
+        label.appendChild(matrixBox);
         container.appendChild(label);
 
         try {
           bwipjs.toCanvas(canvas, {
             bcid: "datamatrix",
-            text: value,
+            text: row.matrixValue,
             scale: scaleValue,
             paddingwidth: 0,
             paddingheight: 0,
@@ -389,12 +478,12 @@
           });
         } catch (error) {
           matrixBox.innerHTML = "";
-          text.textContent = "Erreur : " + value;
-          console.error("Erreur DataMatrix :", value, error);
+          text.textContent = "Erreur : " + row.textValue;
+          console.error("Erreur DataMatrix :", row.matrixValue, error);
         }
       });
 
-      status.textContent = "Étiquettes générées : " + values.length;
+      status.textContent = "Étiquettes générées : " + rows.length;
     }
 
     function loadExample() {
@@ -414,10 +503,14 @@
     [
       "labelWidth",
       "labelHeight",
+      "textLeft",
+      "textTop",
+      "textSize",
+      "matrixLeft",
+      "matrixTop",
       "matrixSize",
-      "fontSize",
-      "gapSize",
       "scaleValue",
+      "matrixPosition",
       "showBorders"
     ].forEach(id => {
       document.getElementById(id).addEventListener("change", () => {
